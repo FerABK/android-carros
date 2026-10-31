@@ -1,4 +1,4 @@
-package com.example.android_carros;
+package com.example.android_carros.models;
 
 public class Cidade {
     private Long id;
