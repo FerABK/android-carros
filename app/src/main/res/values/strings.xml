@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">android-carros</string>
+    <string name="app_name">Android Carros</string>
+
+    <string name="titulo_aplicativo">Android Carros</string>
+    <string name="subtitulo_aplicativo">Sistema de gerenciamento de veículos</string>
+    <string name="titulo_menu">Menu principal</string>
+
+    <string name="menu_marcas">Marcas</string>
+    <string name="menu_modelos">Modelos</string>
+    <string name="menu_cidades">Cidades</string>
+    <string name="menu_anuncios">Anúncios</string>
+
+    <string name="titulo_marcas">Marcas</string>
+    <string name="subtitulo_marcas">Consulte e gerencie as marcas dos veículos.</string>
+    <string name="pesquisar_marcas">Pesquisar marca...</string>
+    <string name="adicionar_marca">+ Adicionar marca</string>
+    <string name="lista_marcas">Lista de marcas</string>
+    <string name="nenhuma_marca">As marcas cadastradas aparecerão aqui.</string>
+
 </resources>
