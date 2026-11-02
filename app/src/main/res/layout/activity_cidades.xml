@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F6FA"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/titulo_cidades"
+        android:textColor="#202A44"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/subtitulo_cidades"
+        android:textColor="#777777"
+        android:textSize="15sp" />
+
+    <EditText
+        android:id="@+id/pesquisaCidade"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:hint="@string/pesquisar_cidades"
+        android:inputType="text"
+        android:padding="14dp"
+        android:background="#FFFFFF" />
+
+    <TextView
+        android:id="@+id/adicionarCidade"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="#202A44"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/adicionar_cidade"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:text="@string/lista_cidades"
+        android:textColor="#202A44"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <ListView
+        android:id="@+id/listCidades"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="8dp" />
+
+    <TextView
+        android:id="@+id/textoVazio"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/nenhuma_cidade"
+        android:textColor="#777777"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+</LinearLayout>

@@ -17,4 +17,13 @@
     <string name="lista_marcas">Lista de marcas</string>
     <string name="nenhuma_marca">As marcas cadastradas aparecerão aqui.</string>
 
+
+    <string name="titulo_cidades">Cidades</string>
+    <string name="subtitulo_cidades">Consulte e gerencie as cidades cadastradas.</string>
+    <string name="pesquisar_cidades">Pesquisar cidade...</string>
+    <string name="adicionar_cidade">+ Adicionar cidade</string>
+    <string name="lista_cidades">Lista de cidades</string>
+    <string name="nenhuma_cidade">As cidades cadastradas aparecerão aqui.</string>
+
+
 </resources>

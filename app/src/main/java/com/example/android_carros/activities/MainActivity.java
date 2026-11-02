@@ -18,8 +18,16 @@ public class MainActivity extends AppCompatActivity {
 
         TextView menuMarcas = findViewById(R.id.menuMarcas);
 
+        TextView menuCidades = findViewById(R.id.menuCidades);
+
+
+
         menuMarcas.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, MarcasActivity.class);
+            startActivity(intent);
+        });
+        menuCidades.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, CidadesActivity.class);
             startActivity(intent);
         });
     }

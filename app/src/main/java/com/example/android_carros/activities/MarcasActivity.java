@@ -1,6 +1,9 @@
 package com.example.android_carros.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -24,10 +27,9 @@ import retrofit2.Response;
 public class MarcasActivity extends AppCompatActivity {
 
     private ListView listMarcas;
-    private TextView textoVazio;
     private EditText pesquisaMarca;
 
-    private List<Marca> todasAsMarcas;
+    private List<Marca> todasAsMarcas = new ArrayList<>();
     private MarcaAdapter adapter;
 
     @Override
@@ -36,15 +38,15 @@ public class MarcasActivity extends AppCompatActivity {
         setContentView(R.layout.activity_marcas);
 
         listMarcas = findViewById(R.id.listMarcas);
-        textoVazio = findViewById(R.id.textoVazio);
         pesquisaMarca = findViewById(R.id.pesquisaMarca);
-
-        todasAsMarcas = new ArrayList<>();
 
         adapter = new MarcaAdapter(this, new ArrayList<>());
         listMarcas.setAdapter(adapter);
+
+        TextView textoVazio = findViewById(R.id.textoVazio);
         listMarcas.setEmptyView(textoVazio);
 
+        // Ao clicar em uma marca, mostra as opções de editar ou excluir.
         listMarcas.setOnItemClickListener((parent, view, position, id) -> {
             Marca marca = adapter.getItem(position);
 
@@ -53,11 +55,12 @@ public class MarcasActivity extends AppCompatActivity {
             }
         });
 
+        // Abre a janela para cadastrar uma marca.
         TextView adicionarMarca = findViewById(R.id.adicionarMarca);
-
         adicionarMarca.setOnClickListener(view -> adicionarMarca());
 
-        pesquisaMarca.addTextChangedListener(new android.text.TextWatcher() {
+        // Atualiza a lista conforme o usuário digita.
+        pesquisaMarca.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -68,21 +71,21 @@ public class MarcasActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(android.text.Editable s) {
+            public void afterTextChanged(Editable s) {
             }
         });
 
         listarMarcas();
     }
 
+    // Busca todas as marcas no servidor.
     private void listarMarcas() {
         ApiService apiService = RetrofitClient.getApiService();
 
-        Call<List<Marca>> chamada = apiService.listarMarcas();
-
-        chamada.enqueue(new Callback<List<Marca>>() {
+        apiService.listarMarcas().enqueue(new Callback<List<Marca>>() {
             @Override
             public void onResponse(Call<List<Marca>> call, Response<List<Marca>> response) {
+
                 if (response.isSuccessful() && response.body() != null) {
                     todasAsMarcas.clear();
                     todasAsMarcas.addAll(response.body());
@@ -104,6 +107,7 @@ public class MarcasActivity extends AppCompatActivity {
         });
     }
 
+    // Mostra somente as marcas que correspondem à pesquisa.
     private void filtrarMarcas(String texto) {
         List<Marca> marcasFiltradas = new ArrayList<>();
 
@@ -117,10 +121,12 @@ public class MarcasActivity extends AppCompatActivity {
         adapter.addAll(marcasFiltradas);
         adapter.notifyDataSetChanged();
     }
+
+    // Mostra as opções disponíveis para uma marca.
     private void mostrarOpcoesMarca(Marca marca) {
         String[] opcoes = {"Editar", "Excluir"};
 
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle(marca.getNome())
                 .setItems(opcoes, (dialog, escolha) -> {
                     if (escolha == 0) {
@@ -131,11 +137,13 @@ public class MarcasActivity extends AppCompatActivity {
                 })
                 .show();
     }
+
+    // Abre a janela para editar uma marca.
     private void editarMarca(Marca marca) {
         EditText campoNome = new EditText(this);
         campoNome.setText(marca.getNome());
 
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Editar marca")
                 .setView(campoNome)
                 .setNegativeButton("Cancelar", null)
@@ -149,14 +157,15 @@ public class MarcasActivity extends AppCompatActivity {
                         return;
                     }
 
-                    marca.setNome(novoNome);
+                    Marca marcaAtualizada = new Marca(marca.getId(), novoNome);
 
                     ApiService apiService = RetrofitClient.getApiService();
 
-                    apiService.atualizarMarca(marca.getId(), marca)
+                    apiService.atualizarMarca(marca.getId(), marcaAtualizada)
                             .enqueue(new Callback<Void>() {
                                 @Override
                                 public void onResponse(Call<Void> call, Response<Void> response) {
+
                                     if (response.isSuccessful()) {
                                         listarMarcas();
 
@@ -170,8 +179,8 @@ public class MarcasActivity extends AppCompatActivity {
                                     }
                                 }
 
-                                    @Override
-                                    public void onFailure(Call<Void> call, Throwable t) {
+                                @Override
+                                public void onFailure(Call<Void> call, Throwable t) {
                                     Toast.makeText(MarcasActivity.this,
                                             "Erro de conexão: " + t.getMessage(),
                                             Toast.LENGTH_LONG).show();
@@ -180,49 +189,53 @@ public class MarcasActivity extends AppCompatActivity {
                 })
                 .show();
     }
+
+    // Pede confirmação antes de excluir.
     private void confirmarExclusao(Marca marca) {
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Excluir marca")
                 .setMessage("Deseja realmente excluir " + marca.getNome() + "?")
                 .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Excluir", (dialog, which) -> {
-                    excluirMarca(marca);
-                })
+                .setPositiveButton("Excluir", (dialog, which) -> excluirMarca(marca))
                 .show();
     }
+
+    // Envia a exclusão da marca para o servidor.
     private void excluirMarca(Marca marca) {
         ApiService apiService = RetrofitClient.getApiService();
 
-        apiService.excluirMarca(marca.getId())
-                .enqueue(new Callback<Void>() {
-                    @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
-                        if (response.isSuccessful()) {
-                            listarMarcas();
+        apiService.excluirMarca(marca.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
 
-                            Toast.makeText(MarcasActivity.this,
-                                    "Marca excluída!",
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(MarcasActivity.this,
-                                    "Não foi possível excluir. Código: " + response.code(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
+                if (response.isSuccessful()) {
+                    listarMarcas();
 
-                    @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                        Toast.makeText(MarcasActivity.this,
-                                "Erro de conexão: " + t.getMessage(),
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
+                    Toast.makeText(MarcasActivity.this,
+                            "Marca excluída!",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MarcasActivity.this,
+                            "Não foi possível excluir. Código: " + response.code(),
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(MarcasActivity.this,
+                        "Erro de conexão: " + t.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
+
+    // Abre a janela para cadastrar uma marca.
     private void adicionarMarca() {
         EditText campoNome = new EditText(this);
         campoNome.setHint("Nome da marca");
 
-        new android.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
                 .setTitle("Adicionar marca")
                 .setView(campoNome)
                 .setNegativeButton("Cancelar", null)
@@ -240,33 +253,31 @@ public class MarcasActivity extends AppCompatActivity {
 
                     ApiService apiService = RetrofitClient.getApiService();
 
-                    apiService.cadastrarMarca(novaMarca)
-                            .enqueue(new Callback<Marca>() {
-                                @Override
-                                public void onResponse(Call<Marca> call,
-                                                       Response<Marca> response) {
-                                    if (response.isSuccessful()) {
-                                        listarMarcas();
+                    apiService.cadastrarMarca(novaMarca).enqueue(new Callback<Marca>() {
+                        @Override
+                        public void onResponse(Call<Marca> call, Response<Marca> response) {
 
-                                        Toast.makeText(MarcasActivity.this,
-                                                "Marca cadastrada!",
-                                                Toast.LENGTH_SHORT).show();
-                                    } else {
-                                        Toast.makeText(MarcasActivity.this,
-                                                "Erro ao cadastrar: " + response.code(),
-                                                Toast.LENGTH_LONG).show();
-                                    }
-                                }
+                            if (response.isSuccessful()) {
+                                listarMarcas();
 
-                                @Override
-                                public void onFailure(Call<Marca> call, Throwable t) {
-                                    Toast.makeText(MarcasActivity.this,
-                                            "Erro de conexão: " + t.getMessage(),
-                                            Toast.LENGTH_LONG).show();
-                                }
-                            });
+                                Toast.makeText(MarcasActivity.this,
+                                        "Marca cadastrada!",
+                                        Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(MarcasActivity.this,
+                                        "Erro ao cadastrar: " + response.code(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Marca> call, Throwable t) {
+                            Toast.makeText(MarcasActivity.this,
+                                    "Erro de conexão: " + t.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
                 })
                 .show();
     }
 }
-
