@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F6FA"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/titulo_anuncios"
+        android:textColor="#202A44"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginTop="24dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/subtitulo_anuncios"
+        android:textColor="#777777"
+        android:textSize="15sp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="24dp" />
+
+    <EditText
+        android:id="@+id/pesquisaAnuncio"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="#FFFFFF"
+        android:hint="@string/pesquisar_anuncios"
+        android:paddingHorizontal="16dp"
+        android:singleLine="true"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/adicionarAnuncio"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="16dp"
+        android:background="#202A44"
+        android:gravity="center"
+        android:text="@string/adicionar_anuncio"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/lista_anuncios"
+        android:textColor="#202A44"
+        android:textSize="19sp"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="12dp" />
+
+    <ListView
+        android:id="@+id/listAnuncios"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="8dp" />
+
+    <TextView
+        android:id="@+id/textoVazio"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:padding="16dp"
+        android:text="@string/nenhum_anuncio"
+        android:textColor="#777777"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+</LinearLayout>

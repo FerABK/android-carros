@@ -16,8 +16,10 @@
         android:theme="@style/Theme.Androidcarros">
 
         <activity android:name=".activities.CidadesActivity" />
-
+        <activity android:name=".activities.ModelosActivity" />
         <activity android:name=".activities.MarcasActivity" />
+        <activity android:name=".activities.AnunciosActivity" />
+
         <activity
             android:name=".activities.MainActivity"
             android:exported="true"

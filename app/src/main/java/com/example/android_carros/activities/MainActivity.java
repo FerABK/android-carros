@@ -17,17 +17,27 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         TextView menuMarcas = findViewById(R.id.menuMarcas);
-
+        TextView menuModelos = findViewById(R.id.menuModelos);
         TextView menuCidades = findViewById(R.id.menuCidades);
-
-
+        TextView menuAnuncios = findViewById(R.id.menuAnuncios);
 
         menuMarcas.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, MarcasActivity.class);
             startActivity(intent);
         });
+
+        menuModelos.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, ModelosActivity.class);
+            startActivity(intent);
+        });
+
         menuCidades.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, CidadesActivity.class);
+            startActivity(intent);
+        });
+
+        menuAnuncios.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, AnunciosActivity.class);
             startActivity(intent);
         });
     }

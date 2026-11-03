@@ -25,5 +25,20 @@
     <string name="lista_cidades">Lista de cidades</string>
     <string name="nenhuma_cidade">As cidades cadastradas aparecerão aqui.</string>
 
+    <string name="titulo_modelos">Modelos</string>
+    <string name="subtitulo_modelos">Consulte e gerencie os modelos dos veículos.</string>
+    <string name="pesquisar_modelos">Pesquisar modelo...</string>
+    <string name="adicionar_modelo">+ Adicionar modelo</string>
+    <string name="lista_modelos">Lista de modelos</string>
+    <string name="nenhum_modelo">Os modelos cadastrados aparecerão aqui.</string>
+
+    <string name="titulo_anuncios">Anúncios</string>
+    <string name="subtitulo_anuncios">Consulte e gerencie os anúncios cadastrados.</string>
+    <string name="pesquisar_anuncios">Pesquisar anúncio...</string>
+    <string name="adicionar_anuncio">+ Adicionar anúncio</string>
+    <string name="lista_anuncios">Lista de anúncios</string>
+    <string name="nenhum_anuncio">Os anúncios cadastrados aparecerão aqui.</string>
+
+
 
 </resources>
