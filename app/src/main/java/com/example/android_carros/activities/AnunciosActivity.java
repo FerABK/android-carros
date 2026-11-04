@@ -2,10 +2,7 @@ package com.example.android_carros.activities;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.text.InputType;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -34,11 +31,17 @@ import retrofit2.Response;
 public class AnunciosActivity extends AppCompatActivity {
 
     private ListView listAnuncios;
-    private EditText pesquisaAnuncio;
+    private Spinner filtroModelo;
+    private Spinner filtroTipo;
+    private EditText anoInicial;
+    private EditText anoFinal;
+    private EditText valorMinimo;
+    private EditText valorMaximo;
 
-    private List<Anuncio> todosOsAnuncios = new ArrayList<>();
+    private List<Modelo> modelosFiltro = new ArrayList<>();
     private List<Modelo> modelosDisponiveis = new ArrayList<>();
     private List<Cidade> cidadesDisponiveis = new ArrayList<>();
+    private List<Anuncio> todosOsAnuncios = new ArrayList<>();
 
     private AnuncioAdapter adapter;
 
@@ -48,7 +51,12 @@ public class AnunciosActivity extends AppCompatActivity {
         setContentView(R.layout.activity_anuncios);
 
         listAnuncios = findViewById(R.id.listAnuncios);
-        pesquisaAnuncio = findViewById(R.id.pesquisaAnuncio);
+        filtroModelo = findViewById(R.id.filtroModelo);
+        filtroTipo = findViewById(R.id.filtroTipo);
+        anoInicial = findViewById(R.id.anoInicial);
+        anoFinal = findViewById(R.id.anoFinal);
+        valorMinimo = findViewById(R.id.valorMinimo);
+        valorMaximo = findViewById(R.id.valorMaximo);
 
         adapter = new AnuncioAdapter(this, new ArrayList<>());
         listAnuncios.setAdapter(adapter);
@@ -67,37 +75,203 @@ public class AnunciosActivity extends AppCompatActivity {
         TextView adicionarAnuncio = findViewById(R.id.adicionarAnuncio);
         adicionarAnuncio.setOnClickListener(view -> adicionarAnuncio());
 
-        pesquisaAnuncio.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+        TextView aplicarFiltros = findViewById(R.id.aplicarFiltros);
+        aplicarFiltros.setOnClickListener(view -> aplicarFiltros());
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filtrarAnuncios(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-
-        listarAnuncios();
+        configurarFiltroTipo();
+        carregarModelosFiltro();
     }
 
-    private void listarAnuncios() {
+    private void configurarFiltroTipo() {
+        String[] tipos = {
+                "Todos os tipos",
+                "SEDAN",
+                "HATCH",
+                "SUV",
+                "CAMIONETE"
+        };
+
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                tipos
+        );
+
+        spinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        filtroTipo.setAdapter(spinnerAdapter);
+    }
+
+    private void carregarModelosFiltro() {
+        ApiService apiService = RetrofitClient.getApiService();
+
+        apiService.listarModelos(null).enqueue(new Callback<List<Modelo>>() {
+            @Override
+            public void onResponse(Call<List<Modelo>> call,
+                                   Response<List<Modelo>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    modelosFiltro.clear();
+                    modelosFiltro.addAll(response.body());
+
+                    List<String> nomes = new ArrayList<>();
+                    nomes.add("Todos os modelos");
+
+                    for (Modelo modelo : modelosFiltro) {
+                        nomes.add(modelo.getNome());
+                    }
+
+                    ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                            AnunciosActivity.this,
+                            android.R.layout.simple_spinner_item,
+                            nomes
+                    );
+
+                    spinnerAdapter.setDropDownViewResource(
+                            android.R.layout.simple_spinner_dropdown_item
+                    );
+
+                    filtroModelo.setAdapter(spinnerAdapter);
+                    listarAnuncios(null, null, null, null, null, null);
+                } else {
+                    Toast.makeText(AnunciosActivity.this,
+                            "Erro ao buscar modelos: " + response.code(),
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Modelo>> call, Throwable t) {
+                Toast.makeText(AnunciosActivity.this,
+                        "Erro de conexão: " + t.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void aplicarFiltros() {
+        Long idModelo = null;
+        String tipo = null;
+        Integer anoDe = null;
+        Integer anoAte = null;
+        Double valorDe = null;
+        Double valorAte = null;
+
+        int posicaoModelo = filtroModelo.getSelectedItemPosition();
+
+        if (posicaoModelo > 0) {
+            idModelo = modelosFiltro.get(posicaoModelo - 1).getId();
+        }
+
+        int posicaoTipo = filtroTipo.getSelectedItemPosition();
+
+        if (posicaoTipo > 0) {
+            tipo = filtroTipo.getSelectedItem().toString();
+        }
+
+        String textoAnoInicial = anoInicial.getText().toString().trim();
+        String textoAnoFinal = anoFinal.getText().toString().trim();
+        String textoValorMinimo = valorMinimo.getText().toString().trim();
+        String textoValorMaximo = valorMaximo.getText().toString().trim();
+
+        try {
+            if (!textoAnoInicial.isEmpty()) {
+                anoDe = Integer.parseInt(textoAnoInicial);
+            }
+
+            if (!textoAnoFinal.isEmpty()) {
+                anoAte = Integer.parseInt(textoAnoFinal);
+            }
+
+            if (!textoValorMinimo.isEmpty()) {
+                valorDe = Double.parseDouble(textoValorMinimo);
+            }
+
+            if (!textoValorMaximo.isEmpty()) {
+                valorAte = Double.parseDouble(textoValorMaximo);
+            }
+        } catch (NumberFormatException e) {
+            Toast.makeText(this,
+                    "Informe valores válidos nos filtros.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (anoDe != null && anoAte != null && anoDe > anoAte) {
+            Toast.makeText(this,
+                    "O ano inicial não pode ser maior que o ano final.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (valorDe != null && valorAte != null && valorDe > valorAte) {
+            Toast.makeText(this,
+                    "O valor mínimo não pode ser maior que o máximo.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        listarAnuncios(idModelo, tipo, anoDe, anoAte, valorDe, valorAte);
+    }
+
+    private void listarAnuncios(Long idModelo, String tipo,
+                                Integer anoDe, Integer anoAte,
+                                Double valorDe, Double valorAte) {
+
         ApiService apiService = RetrofitClient.getApiService();
 
         apiService.listarAnuncios(null, null, null, null, null, null)
                 .enqueue(new Callback<List<Anuncio>>() {
                     @Override
-                    public void onResponse(Call<List<Anuncio>> call, Response<List<Anuncio>> response) {
-
+                    public void onResponse(Call<List<Anuncio>> call,
+                                           Response<List<Anuncio>> response) {
                         if (response.isSuccessful() && response.body() != null) {
                             todosOsAnuncios.clear();
                             todosOsAnuncios.addAll(response.body());
 
-                            filtrarAnuncios(pesquisaAnuncio.getText().toString());
+                            List<Anuncio> anunciosFiltrados = new ArrayList<>();
+
+                            for (Anuncio anuncio : todosOsAnuncios) {
+                                Long modeloId = anuncio.getIdModelo();
+
+                                if (modeloId == null && anuncio.getModelo() != null) {
+                                    modeloId = anuncio.getModelo().getId();
+                                }
+
+                                if (idModelo != null && !idModelo.equals(modeloId)) {
+                                    continue;
+                                }
+
+                                if (tipo != null &&
+                                        (anuncio.getModelo() == null ||
+                                                !tipo.equals(anuncio.getModelo().getTipo()))) {
+                                    continue;
+                                }
+
+                                if (anoDe != null && anuncio.getAno() < anoDe) {
+                                    continue;
+                                }
+
+                                if (anoAte != null && anuncio.getAno() > anoAte) {
+                                    continue;
+                                }
+
+                                if (valorDe != null && anuncio.getValor() < valorDe) {
+                                    continue;
+                                }
+
+                                if (valorAte != null && anuncio.getValor() > valorAte) {
+                                    continue;
+                                }
+
+                                anunciosFiltrados.add(anuncio);
+                            }
+
+                            adapter.clear();
+                            adapter.addAll(anunciosFiltrados);
+                            adapter.notifyDataSetChanged();
+
                         } else {
                             Toast.makeText(AnunciosActivity.this,
                                     "Erro ao buscar anúncios: " + response.code(),
@@ -112,6 +286,10 @@ public class AnunciosActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
                     }
                 });
+    }
+
+    private void atualizarListaAnuncios() {
+        aplicarFiltros();
     }
 
     private void mostrarOpcoesAnuncio(Anuncio anuncio) {
@@ -134,16 +312,16 @@ public class AnunciosActivity extends AppCompatActivity {
 
         apiService.listarModelos(null).enqueue(new Callback<List<Modelo>>() {
             @Override
-            public void onResponse(Call<List<Modelo>> call, Response<List<Modelo>> response) {
-
+            public void onResponse(Call<List<Modelo>> call,
+                                   Response<List<Modelo>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     modelosDisponiveis.clear();
                     modelosDisponiveis.addAll(response.body());
 
                     apiService.listarCidades(null).enqueue(new Callback<List<Cidade>>() {
                         @Override
-                        public void onResponse(Call<List<Cidade>> call, Response<List<Cidade>> response) {
-
+                        public void onResponse(Call<List<Cidade>> call,
+                                               Response<List<Cidade>> response) {
                             if (response.isSuccessful() && response.body() != null) {
                                 cidadesDisponiveis.clear();
                                 cidadesDisponiveis.addAll(response.body());
@@ -163,7 +341,6 @@ public class AnunciosActivity extends AppCompatActivity {
                                     Toast.LENGTH_LONG).show();
                         }
                     });
-
                 } else {
                     Toast.makeText(AnunciosActivity.this,
                             "Erro ao buscar modelos: " + response.code(),
@@ -195,7 +372,10 @@ public class AnunciosActivity extends AppCompatActivity {
                 nomes
         );
 
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
         spinner.setAdapter(spinnerAdapter);
 
         return spinner;
@@ -216,7 +396,10 @@ public class AnunciosActivity extends AppCompatActivity {
                 nomes
         );
 
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
         spinner.setAdapter(spinnerAdapter);
 
         return spinner;
@@ -269,7 +452,8 @@ public class AnunciosActivity extends AppCompatActivity {
 
             EditText campoValor = new EditText(this);
             campoValor.setHint("Valor");
-            campoValor.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            campoValor.setInputType(InputType.TYPE_CLASS_NUMBER |
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL);
             campoValor.setText(String.valueOf(anuncio.getValor()));
 
             EditText campoAno = new EditText(this);
@@ -342,7 +526,8 @@ public class AnunciosActivity extends AppCompatActivity {
 
             EditText campoValor = new EditText(this);
             campoValor.setHint("Valor");
-            campoValor.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+            campoValor.setInputType(InputType.TYPE_CLASS_NUMBER |
+                    InputType.TYPE_NUMBER_FLAG_DECIMAL);
 
             EditText campoAno = new EditText(this);
             campoAno.setHint("Ano");
@@ -455,9 +640,8 @@ public class AnunciosActivity extends AppCompatActivity {
         apiService.cadastrarAnuncio(anuncio).enqueue(new Callback<Anuncio>() {
             @Override
             public void onResponse(Call<Anuncio> call, Response<Anuncio> response) {
-
                 if (response.isSuccessful()) {
-                    listarAnuncios();
+                    atualizarListaAnuncios();
 
                     Toast.makeText(AnunciosActivity.this,
                             "Anúncio cadastrado!",
@@ -484,9 +668,8 @@ public class AnunciosActivity extends AppCompatActivity {
         apiService.atualizarAnuncio(anuncio.getId(), anuncio).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-
                 if (response.isSuccessful()) {
-                    listarAnuncios();
+                    atualizarListaAnuncios();
 
                     Toast.makeText(AnunciosActivity.this,
                             "Anúncio atualizado!",
@@ -522,9 +705,8 @@ public class AnunciosActivity extends AppCompatActivity {
         apiService.excluirAnuncio(anuncio.getId()).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-
                 if (response.isSuccessful()) {
-                    listarAnuncios();
+                    atualizarListaAnuncios();
 
                     Toast.makeText(AnunciosActivity.this,
                             "Anúncio excluído!",
@@ -543,19 +725,5 @@ public class AnunciosActivity extends AppCompatActivity {
                         Toast.LENGTH_LONG).show();
             }
         });
-    }
-    private void filtrarAnuncios(String texto) {
-        List<Anuncio> anunciosFiltrados = new ArrayList<>();
-
-        for (Anuncio anuncio : todosOsAnuncios) {
-            if (anuncio.getDescricao() != null &&
-                    anuncio.getDescricao().toLowerCase().contains(texto.toLowerCase())) {
-
-                anunciosFiltrados.add(anuncio);
-            }
-        }
-
-        adapter.clear();
-        adapter.addAll(anunciosFiltrados);
     }
 }

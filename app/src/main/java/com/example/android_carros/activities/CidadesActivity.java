@@ -1,4 +1,3 @@
-
 package com.example.android_carros.activities;
 
 import android.app.AlertDialog;
@@ -31,8 +30,6 @@ public class CidadesActivity extends AppCompatActivity {
 
     private ListView listCidades;
     private EditText pesquisaCidade;
-
-    private List<Cidade> todasAsCidades = new ArrayList<>();
     private CidadeAdapter adapter;
 
     @Override
@@ -67,7 +64,7 @@ public class CidadesActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filtrarCidades(s.toString());
+                listarCidades(s.toString().trim());
             }
 
             @Override
@@ -75,21 +72,23 @@ public class CidadesActivity extends AppCompatActivity {
             }
         });
 
-        listarCidades();
+        listarCidades(null);
     }
 
-    private void listarCidades() {
+    private void listarCidades(String nome) {
         ApiService apiService = RetrofitClient.getApiService();
 
-        apiService.listarCidades(null).enqueue(new Callback<List<Cidade>>() {
+        if (nome == null || nome.trim().isEmpty()) {
+            nome = null;
+        }
+
+        apiService.listarCidades(nome).enqueue(new Callback<List<Cidade>>() {
             @Override
             public void onResponse(Call<List<Cidade>> call, Response<List<Cidade>> response) {
-
                 if (response.isSuccessful() && response.body() != null) {
-                    todasAsCidades.clear();
-                    todasAsCidades.addAll(response.body());
-
-                    filtrarCidades(pesquisaCidade.getText().toString());
+                    adapter.clear();
+                    adapter.addAll(response.body());
+                    adapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(CidadesActivity.this,
                             "Erro ao buscar cidades: " + response.code(),
@@ -106,18 +105,8 @@ public class CidadesActivity extends AppCompatActivity {
         });
     }
 
-    private void filtrarCidades(String texto) {
-        List<Cidade> cidadesFiltradas = new ArrayList<>();
-
-        for (Cidade cidade : todasAsCidades) {
-            if (cidade.getNome().toLowerCase().contains(texto.toLowerCase())) {
-                cidadesFiltradas.add(cidade);
-            }
-        }
-
-        adapter.clear();
-        adapter.addAll(cidadesFiltradas);
-        adapter.notifyDataSetChanged();
+    private void atualizarListaCidades() {
+        listarCidades(pesquisaCidade.getText().toString().trim());
     }
 
     private void mostrarOpcoesCidade(Cidade cidade) {
@@ -178,9 +167,8 @@ public class CidadesActivity extends AppCompatActivity {
                             .enqueue(new Callback<Void>() {
                                 @Override
                                 public void onResponse(Call<Void> call, Response<Void> response) {
-
                                     if (response.isSuccessful()) {
-                                        listarCidades();
+                                        atualizarListaCidades();
 
                                         Toast.makeText(CidadesActivity.this,
                                                 "Cidade atualizada!",
@@ -218,9 +206,8 @@ public class CidadesActivity extends AppCompatActivity {
         apiService.excluirCidade(cidade.getId()).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-
                 if (response.isSuccessful()) {
-                    listarCidades();
+                    atualizarListaCidades();
 
                     Toast.makeText(CidadesActivity.this,
                             "Cidade excluída!",
@@ -277,9 +264,8 @@ public class CidadesActivity extends AppCompatActivity {
                     apiService.cadastrarCidade(novaCidade).enqueue(new Callback<Cidade>() {
                         @Override
                         public void onResponse(Call<Cidade> call, Response<Cidade> response) {
-
                             if (response.isSuccessful()) {
-                                listarCidades();
+                                atualizarListaCidades();
 
                                 Toast.makeText(CidadesActivity.this,
                                         "Cidade cadastrada!",

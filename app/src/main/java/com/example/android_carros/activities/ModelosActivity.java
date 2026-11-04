@@ -1,10 +1,9 @@
-
 package com.example.android_carros.activities;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -32,11 +31,9 @@ import retrofit2.Response;
 public class ModelosActivity extends AppCompatActivity {
 
     private ListView listModelos;
-    private EditText pesquisaModelo;
+    private Spinner filtroMarca;
 
     private List<Marca> marcasDisponiveis = new ArrayList<>();
-    private List<Modelo> todosOsModelos = new ArrayList<>();
-
     private ModeloAdapter adapter;
 
     @Override
@@ -45,7 +42,7 @@ public class ModelosActivity extends AppCompatActivity {
         setContentView(R.layout.activity_modelos);
 
         listModelos = findViewById(R.id.listModelos);
-        pesquisaModelo = findViewById(R.id.pesquisaModelo);
+        filtroMarca = findViewById(R.id.filtroMarca);
 
         adapter = new ModeloAdapter(this, new ArrayList<>());
         listModelos.setAdapter(adapter);
@@ -53,47 +50,97 @@ public class ModelosActivity extends AppCompatActivity {
         TextView textoVazio = findViewById(R.id.textoVazio);
         listModelos.setEmptyView(textoVazio);
 
-        // Ao clicar em um modelo, permite editar ou excluir.
         listModelos.setOnItemClickListener((parent, view, position, id) -> {
             Modelo modelo = adapter.getItem(position);
-            mostrarOpcoesModelo(modelo);
+
+            if (modelo != null) {
+                mostrarOpcoesModelo(modelo);
+            }
         });
 
-        // Abre o cadastro.
         TextView adicionarModelo = findViewById(R.id.adicionarModelo);
         adicionarModelo.setOnClickListener(view -> adicionarModelo());
 
-        // Filtra os modelos enquanto o usuário digita.
-        pesquisaModelo.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filtrarModelos(s.toString());
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
-
-        listarModelos();
+        carregarMarcasFiltro();
     }
 
-    // Busca os modelos no servidor.
-    private void listarModelos() {
+    private void carregarMarcasFiltro() {
         ApiService api = RetrofitClient.getApiService();
 
-        api.listarModelos(null).enqueue(new Callback<List<Modelo>>() {
+        api.listarMarcas().enqueue(new Callback<List<Marca>>() {
+            @Override
+            public void onResponse(Call<List<Marca>> call, Response<List<Marca>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    marcasDisponiveis.clear();
+                    marcasDisponiveis.addAll(response.body());
+
+                    List<String> nomes = new ArrayList<>();
+                    nomes.add("Todas as marcas");
+
+                    for (Marca marca : marcasDisponiveis) {
+                        nomes.add(marca.getNome());
+                    }
+
+                    ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                            ModelosActivity.this,
+                            android.R.layout.simple_spinner_item,
+                            nomes
+                    );
+
+                    spinnerAdapter.setDropDownViewResource(
+                            android.R.layout.simple_spinner_dropdown_item
+                    );
+
+                    filtroMarca.setAdapter(spinnerAdapter);
+
+                    filtroMarca.setOnItemSelectedListener(
+                            new AdapterView.OnItemSelectedListener() {
+                                @Override
+                                public void onItemSelected(AdapterView<?> parent,
+                                                           View view,
+                                                           int position,
+                                                           long id) {
+                                    if (position == 0) {
+                                        listarModelos(null);
+                                    } else {
+                                        Long idMarca = marcasDisponiveis
+                                                .get(position - 1).getId();
+
+                                        listarModelos(idMarca);
+                                    }
+                                }
+
+                                @Override
+                                public void onNothingSelected(AdapterView<?> parent) {
+                                }
+                            }
+                    );
+                } else {
+                    Toast.makeText(ModelosActivity.this,
+                            "Erro ao buscar marcas: " + response.code(),
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Marca>> call, Throwable t) {
+                Toast.makeText(ModelosActivity.this,
+                        "Erro de conexão: " + t.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void listarModelos(Long idMarca) {
+        ApiService api = RetrofitClient.getApiService();
+
+        api.listarModelos(idMarca).enqueue(new Callback<List<Modelo>>() {
             @Override
             public void onResponse(Call<List<Modelo>> call, Response<List<Modelo>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    todosOsModelos.clear();
-                    todosOsModelos.addAll(response.body());
-
-                    filtrarModelos(pesquisaModelo.getText().toString());
+                    adapter.clear();
+                    adapter.addAll(response.body());
+                    adapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(ModelosActivity.this,
                             "Erro ao buscar modelos: " + response.code(),
@@ -110,22 +157,16 @@ public class ModelosActivity extends AppCompatActivity {
         });
     }
 
-    // Mostra somente os modelos que correspondem à pesquisa.
-    private void filtrarModelos(String texto) {
-        List<Modelo> filtrados = new ArrayList<>();
+    private void atualizarListaModelos() {
+        int posicao = filtroMarca.getSelectedItemPosition();
 
-        for (Modelo modelo : todosOsModelos) {
-            if (modelo.getNome() != null &&
-                    modelo.getNome().toLowerCase().contains(texto.toLowerCase())) {
-                filtrados.add(modelo);
-            }
+        if (posicao <= 0) {
+            listarModelos(null);
+        } else {
+            listarModelos(marcasDisponiveis.get(posicao - 1).getId());
         }
-
-        adapter.clear();
-        adapter.addAll(filtrados);
     }
 
-    // Mostra as opções de edição e exclusão.
     private void mostrarOpcoesModelo(Modelo modelo) {
         String[] opcoes = {"Editar", "Excluir"};
 
@@ -141,7 +182,6 @@ public class ModelosActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Abre o formulário de edição.
     private void editarModelo(Modelo modelo) {
         listarMarcas(() -> {
 
@@ -151,7 +191,6 @@ public class ModelosActivity extends AppCompatActivity {
 
             Spinner spinnerTipo = criarSpinnerTipo();
 
-            // Seleciona o tipo atual.
             for (int i = 0; i < spinnerTipo.getCount(); i++) {
                 if (spinnerTipo.getItemAtPosition(i).toString().equals(modelo.getTipo())) {
                     spinnerTipo.setSelection(i);
@@ -161,14 +200,12 @@ public class ModelosActivity extends AppCompatActivity {
 
             Spinner spinnerMarca = criarSpinnerMarca();
 
-            // Descobre o ID da marca atual.
             Long idMarca = modelo.getIdMarca();
 
             if (idMarca == null && modelo.getMarca() != null) {
                 idMarca = modelo.getMarca().getId();
             }
 
-            // Seleciona a marca atual.
             for (int i = 0; i < marcasDisponiveis.size(); i++) {
                 if (marcasDisponiveis.get(i).getId().equals(idMarca)) {
                     spinnerMarca.setSelection(i);
@@ -214,9 +251,8 @@ public class ModelosActivity extends AppCompatActivity {
                                 nome,
                                 tipo,
                                 marca.getId(),
-                                null
+                                marca
                         );
-
                         ApiService api = RetrofitClient.getApiService();
 
                         api.atualizarModelo(modelo.getId(), atualizado)
@@ -224,7 +260,8 @@ public class ModelosActivity extends AppCompatActivity {
                                     @Override
                                     public void onResponse(Call<Void> call, Response<Void> response) {
                                         if (response.isSuccessful()) {
-                                            listarModelos();
+                                            atualizarListaModelos();
+
                                             Toast.makeText(ModelosActivity.this,
                                                     "Modelo atualizado!",
                                                     Toast.LENGTH_SHORT).show();
@@ -247,7 +284,6 @@ public class ModelosActivity extends AppCompatActivity {
         });
     }
 
-    // Pergunta antes de excluir.
     private void confirmarExclusao(Modelo modelo) {
         new AlertDialog.Builder(this)
                 .setTitle("Excluir modelo")
@@ -257,7 +293,6 @@ public class ModelosActivity extends AppCompatActivity {
                 .show();
     }
 
-    // Exclui o modelo no servidor.
     private void excluirModelo(Modelo modelo) {
         ApiService api = RetrofitClient.getApiService();
 
@@ -265,7 +300,8 @@ public class ModelosActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    listarModelos();
+                    atualizarListaModelos();
+
                     Toast.makeText(ModelosActivity.this,
                             "Modelo excluído!",
                             Toast.LENGTH_SHORT).show();
@@ -285,7 +321,6 @@ public class ModelosActivity extends AppCompatActivity {
         });
     }
 
-    // Abre o formulário de cadastro.
     private void adicionarModelo() {
         listarMarcas(() -> {
 
@@ -342,7 +377,8 @@ public class ModelosActivity extends AppCompatActivity {
                             @Override
                             public void onResponse(Call<Modelo> call, Response<Modelo> response) {
                                 if (response.isSuccessful()) {
-                                    listarModelos();
+                                    atualizarListaModelos();
+
                                     Toast.makeText(ModelosActivity.this,
                                             "Modelo cadastrado!",
                                             Toast.LENGTH_SHORT).show();
@@ -365,7 +401,6 @@ public class ModelosActivity extends AppCompatActivity {
         });
     }
 
-    // Busca as marcas antes de abrir o formulário.
     private void listarMarcas(Runnable aoCarregar) {
         ApiService api = RetrofitClient.getApiService();
 
@@ -392,7 +427,6 @@ public class ModelosActivity extends AppCompatActivity {
         });
     }
 
-    // Cria o Spinner com as marcas cadastradas.
     private Spinner criarSpinnerMarca() {
         Spinner spinner = new Spinner(this);
         List<String> nomes = new ArrayList<>();
@@ -416,7 +450,6 @@ public class ModelosActivity extends AppCompatActivity {
         return spinner;
     }
 
-    // Cria o Spinner com os tipos permitidos.
     private Spinner criarSpinnerTipo() {
         Spinner spinner = new Spinner(this);
 
